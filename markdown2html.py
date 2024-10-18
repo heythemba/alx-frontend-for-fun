@@ -1,26 +1,57 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
+"""
+markdown2html.py
+A script that converts a Markdown file to an HTML file, supporting various Markdown syntax.
+It supports:
+- Headings (#, ##, etc.)
+- Unordered lists (-)
+- Ordered lists (*)
+- Paragraphs
+- Bold (**text**)
+- Emphasis (__text__)
+- MD5 hashing ([[text]])
+- Removing 'c' or 'C' characters from text ((text))
+
+Usage: ./markdown2html.py input_file.md output_file.html
+"""
 
 import sys
 import os
 import re
 import hashlib
 
+
 def md5_hash(content):
     """Return the MD5 hash of a string."""
     return hashlib.md5(content.encode()).hexdigest()
+
 
 def remove_c(content):
     """Remove all 'c' or 'C' from the content (case insensitive)."""
     return re.sub(r'[cC]', '', content)
 
+
 def markdown_to_html_line(line, in_unordered_list, in_ordered_list, in_paragraph):
     """
     Convert a single line of Markdown to HTML.
-    Handles heading syntax, unordered list syntax, ordered list syntax, paragraphs,
-    bold (**text**), emphasis (__text__), MD5 hashing ([[text]]), and removing 'c' or 'C' ((text)).
-    Returns the converted HTML line and flags indicating list and paragraph states.
-    """
+    
+    Handles:
+    - Heading syntax
+    - Unordered and ordered list syntax
+    - Paragraphs
+    - Bold (**text**) and emphasis (__text__)
+    - MD5 hashing ([[text]])
+    - Removing 'c'/'C' from content ((text))
 
+    Args:
+        line (str): The current line of Markdown to convert.
+        in_unordered_list (bool): Whether we are inside an unordered list.
+        in_ordered_list (bool): Whether we are inside an ordered list.
+        in_paragraph (bool): Whether we are inside a paragraph.
+
+    Returns:
+        tuple: The converted HTML line, updated list and paragraph states.
+    """
     heading_levels = {
         1: "<h1>{}</h1>",
         2: "<h2>{}</h2>",
@@ -79,50 +110,53 @@ def markdown_to_html_line(line, in_unordered_list, in_ordered_list, in_paragraph
     else:
         return f"    <br />\n    {line}", False, False, True
 
-# Check the number of arguments
-if len(sys.argv) < 3:
-    sys.stderr.write("Usage: ./markdown2html.py README.md README.html\n")
-    sys.exit(1)
 
-# Get the markdown input file and the output file from the arguments
-markdown_file = sys.argv[1]
-html_file = sys.argv[2]
+if __name__ == "__main__":
+    # Check the number of arguments
+    if len(sys.argv) < 3:
+        sys.stderr.write("Usage: ./markdown2html.py README.md README.html\n")
+        sys.exit(1)
 
-# Check if the markdown file exists
-if not os.path.isfile(markdown_file):
-    sys.stderr.write(f"Missing {markdown_file}\n")
-    sys.exit(1)
+    # Get the markdown input file and the output file from the arguments
+    markdown_file = sys.argv[1]
+    html_file = sys.argv[2]
 
-# Read the content of the markdown file and convert it
-try:
-    with open(markdown_file, 'r') as md_file:
-        lines = md_file.readlines()
+    # Check if the markdown file exists
+    if not os.path.isfile(markdown_file):
+        sys.stderr.write(f"Missing {markdown_file}\n")
+        sys.exit(1)
 
-    # Convert markdown lines to HTML
-    html_content = []
-    in_unordered_list = False  # Track if we're inside an unordered list
-    in_ordered_list = False    # Track if we're inside an ordered list
-    in_paragraph = False       # Track if we're inside a paragraph
-    for line in lines:
-        html_line, in_unordered_list, in_ordered_list, in_paragraph = markdown_to_html_line(line.strip(), in_unordered_list, in_ordered_list, in_paragraph)
-        if html_line:
-            html_content.append(html_line)
+    # Read the content of the markdown file and convert it
+    try:
+        with open(markdown_file, 'r') as md_file:
+            lines = md_file.readlines()
 
-    # Close any open lists or paragraphs at the end of the document
-    if in_unordered_list:
-        html_content.append("</ul>")
-    if in_ordered_list:
-        html_content.append("</ol>")
-    if in_paragraph:
-        html_content.append("</p>")
+        # Convert markdown lines to HTML
+        html_content = []
+        in_unordered_list = False  # Track if we're inside an unordered list
+        in_ordered_list = False    # Track if we're inside an ordered list
+        in_paragraph = False       # Track if we're inside a paragraph
+        for line in lines:
+            html_line, in_unordered_list, in_ordered_list, in_paragraph = markdown_to_html_line(
+                line.strip(), in_unordered_list, in_ordered_list, in_paragraph)
+            if html_line:
+                html_content.append(html_line)
 
-    # Write the converted content to the HTML file
-    with open(html_file, 'w') as html_out:
-        html_out.write("\n".join(html_content))
+        # Close any open lists or paragraphs at the end of the document
+        if in_unordered_list:
+            html_content.append("</ul>")
+        if in_ordered_list:
+            html_content.append("</ol>")
+        if in_paragraph:
+            html_content.append("</p>")
 
-except Exception as e:
-    sys.stderr.write(str(e) + "\n")
-    sys.exit(1)
+        # Write the converted content to the HTML file
+        with open(html_file, 'w') as html_out:
+            html_out.write("\n".join(html_content))
 
-# Exit with success status
-sys.exit(0)
+    except Exception as e:
+        sys.stderr.write(str(e) + "\n")
+        sys.exit(1)
+
+    # Exit with success status
+    sys.exit(0)
